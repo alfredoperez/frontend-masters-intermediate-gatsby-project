@@ -2,7 +2,17 @@ const authors = require('./src/data/authors.json');
 const books = require('./src/data/books.json');
 
 exports.sourceNodes = ({ actions, createNodeId, createContentDigest }) => {
-  const { createNode } = actions;
+  const { createNode, createTypes } = actions;
+
+  createTypes(`
+    type Author implements Node {
+      books: [Book!]! @link(from: "slug" by: "author.slug")
+    }
+
+    type Book implements Node {
+      author: Author! @link(from: "author" by: "slug")
+    }
+  `);
 
   authors.forEach((author) => {
     createNode({
@@ -17,6 +27,7 @@ exports.sourceNodes = ({ actions, createNodeId, createContentDigest }) => {
       },
     });
   });
+
   books.forEach((book) => {
     createNode({
       ...book,
@@ -24,13 +35,14 @@ exports.sourceNodes = ({ actions, createNodeId, createContentDigest }) => {
       parent: null,
       children: [],
       internal: {
-        type: 'book',
+        type: 'Book',
         content: JSON.stringify(book),
         contentDigest: createContentDigest(book),
       },
     });
   });
 };
+
 exports.createPages = ({ actions }) => {
   const { createPage } = actions;
 
@@ -38,9 +50,9 @@ exports.createPages = ({ actions }) => {
     path: '/custom',
     component: require.resolve('./src/templates/custom.js'),
     context: {
-      title: `A custom page`,
+      title: 'A Custom Page!',
       meta: {
-        description: `A custom page!`,
+        description: 'A custom page with context.',
       },
     },
   });
